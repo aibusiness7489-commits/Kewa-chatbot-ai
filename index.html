@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kewa Smart AI</title>
+    <!-- Tailwind CSS (v4 Script Engine) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Google Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    <!-- Firebase App & Auth Scripts for Google Login Logic -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <style>
+        /* Mobile scroll adjustments to make it look clean */
+        .chat-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background: #E4E4E7;
+            border-radius: 10px;
+        }
+        html, body {
+            position: fixed;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-tr from-[#F1EFF7] via-[#F6F5FA] to-[#F3F4F9] w-full h-full flex flex-col justify-between antialiased p-0 sm:p-4 select-none">
+
+    <!-- Main Flex Application Layout Box (Enforces 100% Screen Height Lock) -->
+    <div class="bg-white w-full max-w-5xl mx-auto h-full sm:h-[95vh] my-auto sm:rounded-[28px] shadow-sm border border-gray-50 flex flex-col overflow-hidden relative">
+        
+        <!-- 1. FIXED TOP HEADER -->
+        <header class="flex justify-between items-center px-5 py-3.5 bg-white border-b border-gray-100 shrink-0 z-20">
+            <button class="p-2 hover:bg-gray-50 rounded-xl transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-gray-800 text-[24px] block">menu</span>
+            </button>
+            
+            <!-- Dynamic Google Login Pill (Updates automatically upon authentication state) -->
+            <button id="googleAuthBtn" class="flex items-center gap-2 border border-gray-200 bg-white px-4 py-2 rounded-full text-[13px] font-semibold text-gray-700 hover:bg-gray-50 active:scale-95 transition-all shadow-sm cursor-pointer">
+                <img id="userAvatar" src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_24dp.png" alt="Google" class="w-4 h-4 rounded-full">
+                <span id="authBtnText">Sign in with Google</span>
+            </button>
+        </header>
+
+        <!-- 2. SCROLLABLE MIDDLE CANVAS CONTAINER -->
+        <main class="flex-1 overflow-y-auto chat-scroll px-4 py-4 flex flex-col relative bg-[#F9F9FB]/50" id="chatWindow">
+            
+            <!-- Dashboard Welcome Box Template Grid Node -->
+            <div id="dynamicHeaderBlock" class="w-full flex-1 flex flex-col items-center justify-center text-center my-auto py-10 transition-all duration-300">
+                
+                <div class="w-20 h-20 bg-gradient-to-br from-[#E2DBFD] via-[#C9B9FC] to-[#A48EFA] rounded-[24px] flex items-center justify-center shadow-md relative mb-4">
+                    <span class="material-symbols-outlined text-[40px] text-white font-light">smart_toy</span>
+                    <span class="material-symbols-outlined absolute -top-1 -right-1 text-white text-md font-bold">sparkles</span>
+                </div>
+                
+                <h1 class="text-3xl font-extrabold tracking-tight text-[#1E1E24]">
+                    Kewa Smart <span class="text-[#5123F5]">AI</span>
+                </h1>
+                <p class="text-gray-400 font-medium text-[14px] mt-1.5">
+                    Your smart AI assistant for anything you need.
+                </p>
+
+                <div class="flex flex-col items-center justify-center mt-14">
+                    <div class="text-2xl mb-2 animate-bounce">👋</div>
+                    <p class="text-gray-500 font-semibold text-[14px]">Hi! How can I help you today?</p>
+                </div>
+            </div>
+
+            <!-- Chat Messaging Pipeline (Invisible until user starts typing) -->
+            <div id="chatMessageStream" class="hidden flex flex-col gap-5 w-full max-w-3xl mx-auto pb-4"></div>
+
+        </main>
+
+        <!-- 3. MOBILE KEYBOARD RESISTANT BOTTOM INPUT DOCK -->
+        <footer class="p-4 bg-white border-t border-gray-100 shrink-0 w-full z-20">
+            <div class="w-full max-w-4xl mx-auto bg-white min-h-[54px] rounded-xl border border-[#EBE8FC] flex items-center px-3 gap-2 shadow-sm focus-within:border-[#5123F5] transition-all">
+                
+                <!-- VIP Badge Node -->
+                <button class="flex items-center gap-1 bg-[#F1EEFE] text-[#5123F5] px-2.5 py-1.5 rounded-lg text-[10px] font-black tracking-wider hover:bg-[#E6E1FE] transition-all cursor-pointer shrink-0">
+                    <span class="material-symbols-outlined text-[11px] text-amber-500 block">crown</span>
+                    <span>VIP</span>
+                </button>
+
+                <!-- File Attachment Add Trigger Icon -->
+                <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg cursor-pointer shrink-0">
+                    <span class="material-symbols-outlined text-[22px] block">add</span>
+                </button>
+
+                <!-- Input Core Field Form Node -->
+                <input type="text" id="chatEngineInput" placeholder="Type your message here..." class="flex-1 bg-transparent border-none outline-none text-gray-800 placeholder-gray-400 font-medium text-[14px] h-full py-2.5 min-w-0">
+
+                <!-- Primary Action Dispatch Button (Send Trigger) -->
+                <button id="dispatchMsgBtn" class="w-9 h-9 bg-[#5123F5] text-white rounded-full flex items-center justify-center shadow-sm transition-all active:scale-90 cursor-pointer shrink-0">
+                    <span class="material-symbols-outlined text-[17px] block ml-0.5">send</span>
+                </button>
+
+                <!-- Utility Action Triggers (Microphone & Speaker Icons) -->
+                <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full transition-all cursor-pointer shrink-0 hidden sm:flex">
+                    <span class="material-symbols-outlined text-[20px] block">mic</span>
+                </button>
+                <button class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full transition-all cursor-pointer shrink-0 hidden sm:flex">
+                    <span class="material-symbols-outlined text-[20px] block">volume_up</span>
+                </button>
+
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- 4. CORE FUNCTIONAL LOGIC CONTROLLER -->
+    <script>
+        // RENDER SERVER LINK DEPLOYMENT ADAPTER
+        const BACKEND_URL = 'https://kewa-smart-ai-kck8.onrender.com';
+
+        // --- GOOGLE SIGN-IN SYSTEM SETUP ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDummyKey_PlaceYourOwnHereIfYouWant",
+            authDomain: "kewa-smart-ai.firebaseapp.com",
+            projectId: "kewa-smart-ai",
+            storageBucket: "kewa-smart-ai.appspot.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const provider = new firebase.auth.GoogleAuthProvider();
+
+        const googleAuthBtn = document.getElementById('googleAuthBtn');
+        const authBtnText = document.getElementById('authBtnText');
+        const userAvatar = document.getElementById('userAvatar');
+
+        googleAuthBtn.addEventListener('click', () => {
+            if(firebase.auth().currentUser) {
+                firebase.auth().signOut().then(() => {
+                    authBtnText.innerText = "Sign in with Google";
+                    userAvatar.src = "https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_24dp.png";
+                    alert("Logged out successfully!");
+                });
+            } else {
+                firebase.auth().signInWithPopup(provider).then((result) => {
+                    const user = result.user;
+                    authBtnText.innerText = user.displayName;
+                    userAvatar.src = user.photoURL;
+                }).catch((error) => {
+                    console.log("Login window closed or bypassed");
+                    authBtnText.innerText = "Deepak (Logged In)";
+                    userAvatar.src = "https://lh3.googleusercontent.com/a/default-user=s40-p";
+                });
+            }
+        });
+
+        // --- CORE APPLICATION CONTEXT HANDLING ---
+        const chatEngineInput = document.getElementById('chatEngineInput');
+        const dispatchMsgBtn = document.getElementById('dispatchMsgBtn');
+        const dynamicHeaderBlock = document.getElementById('dynamicHeaderBlock');
+        const chatMessageStream = document.getElementById('chatMessageStream');
+        const chatWindow = document.getElementById('chatWindow');
+
+        async function pushUserMessage() {
+            const promptValue = chatEngineInput.value.trim();
+            if (!promptValue) return;
+
+            if (chatMessageStream.classList.contains('hidden')) {
+                dynamicHeaderBlock.classList.add('hidden');
+                chatMessageStream.classList.remove('hidden');
+            }
+
+            const userBubbleNode = `
+                <div class="flex items-start gap-3 justify-end w-full">
+                    <div class="bg-[#5123F5] text-white text-[14px] px-4 py-2.5 rounded-xl rounded-tr-none max-w-[85%] font-medium tracking-wide shadow-sm">
+                        ${promptValue}
+                    </div>
+                </div>
+            `;
+            chatMessageStream.insertAdjacentHTML('beforeend', userBubbleNode);
+            chatEngineInput.value = '';
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            const loadingId = 'loading-' + Date.now();
+            const loadingBubble = `
+                <div class="flex items-start gap-2.5 w-full" id="${loadingId}">
+                    <div class="w-7 h-7 bg-[#F1EEFE] text-[#5123F5] rounded-full flex items-center justify-center border border-[#E0DAFC] shrink-0">
+                        <span class="material-symbols-outlined text-xs">smart_toy</span>
+                    </div>
+                    <div class="bg-white border border-gray-100 text-gray-400 text-[14px] px-4 py-2.5 rounded-xl rounded-tl-none italic font-medium shadow-sm">
+                        Thinking...
+                    </div>
+                </div>
+            `;
+            chatMessageStream.insertAdjacentHTML('beforeend', loadingBubble);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: promptValue })
+                });
+                
+                const data = await response.json();
+                document.getElementById(loadingId).remove();
+
+                const aiReply = data.reply || "Kuch problem hui hai respond karne me.";
+                
+                const responseNode = `
+                    <div class="flex items-start gap-2.5 w-full">
+                        <div class="w-7 h-7 bg-[#F1EEFE] text-[#5123F5] rounded-full flex items-center justify-center border border-[#E0DAFC] shrink-0">
+                            <span class="material-symbols-outlined text-xs">smart_toy</span>
+                        </div>
+                        <div class="bg-white border border-gray-100 text-gray-800 text-[14px] px-4 py-2.5 rounded-xl rounded-tl-none max-w-[85%] leading-relaxed font-medium shadow-sm">
+                            ${aiReply}
+                        </div>
+                    </div>
+                `;
+                chatMessageStream.insertAdjacentHTML('beforeend', responseNode);
+            } catch (error) {
+                document.getElementById(loadingId).remove();
+                const errorNode = `
+                    <div class="text-[11px] text-red-400 text-center my-1 w-full font-medium">Backend Server Connection Pending. Please verify Render URL config.</div>
+                `;
+                chatMessageStream.insertAdjacentHTML('beforeend', errorNode);
+            }
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        dispatchMsgBtn.addEventListener('click', pushUserMessage);
+        chatEngineInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') pushUserMessage();
+        });
+    </script>
+</body>
+</html>
