@@ -7,7 +7,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 html_file_path = os.path.join(current_dir, 'index.html')
 
 # Gemini API Configuration
-API_KEY = "YAHAN_APNI_GEMINI_KEY_DALEIN"
+API_KEY = "AIzaSyCCJ2zyArvJhQQafFSBxQCP4MALwnBWXTU"
 model_name = 'gemini-2.5-flash'
 
 try:
